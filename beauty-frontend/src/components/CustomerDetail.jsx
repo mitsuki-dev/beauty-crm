@@ -364,7 +364,7 @@ export default function CustomerDetail() {
           localStorage.getItem("access_token") ||
           localStorage.getItem("rb_token");
 
-        const res = await fetch(`${API_BASE_URL}/staffs`, {
+        const res = await fetch(`${API_BASE_URL}/staffs/`, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
           signal: controller.signal,
         });

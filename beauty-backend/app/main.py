@@ -30,6 +30,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+API_PREFIX = "/api"
 # ここで登録！
 app.include_router(auth_router, prefix="/api")        #ログイン系
 app.include_router(customers_router, prefix="/api")   #顧客登録API
@@ -39,9 +40,10 @@ app.include_router(visits.router, prefix="/api")      #来店／購入履歴の�
 app.include_router(follow_mail.router, prefix="/api") #フォロー対象の抽出API
 app.include_router(dashboard.router, prefix="/api") #ダッシュボード系
 
-@app.get("/status")
+@app.get("/api/status")
 def status():
     return {"status": "ok"}
+
 
 BASE_DIR = Path(__file__).resolve().parent
 static_dir = BASE_DIR / "static"

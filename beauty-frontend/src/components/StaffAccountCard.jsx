@@ -78,7 +78,7 @@ function StaffAccountCard() {
           staff_code: form.staffCode,
           name: form.name,
           email: form.email,
-          password: form.password, // ✅追加
+          password: form.password, // 追加
         }),
       });
 
