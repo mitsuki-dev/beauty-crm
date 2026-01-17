@@ -1,6 +1,6 @@
 // src/components/SidebarMenu.jsx
 import React from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 
 const menuItems = [
   { label: "ダッシュボード", to: "/dashboard" },
@@ -10,6 +10,7 @@ const menuItems = [
 ];
 
 export default function SidebarMenu() {
+  const navigate = useNavigate();
   const handleLogout = () => {
     const ok = window.confirm("本当にログアウトしますか？");
     if (!ok) return;
@@ -19,8 +20,8 @@ export default function SidebarMenu() {
     localStorage.removeItem("rb_staff_name");
     localStorage.removeItem("rb_user");
 
-    //ログイン画面へ
-    window.location.assign("/login");
+    //ログイン画面へ//
+    navigate("/login", { replace: true });
   };
 
   return (
