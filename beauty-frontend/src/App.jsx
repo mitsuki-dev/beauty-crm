@@ -1,5 +1,5 @@
 // src/App.jsx
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
 import HomeScreen from "./components/HomeScreen"; //ホーム画面
 import LoginForm from "./components/LoginForm"; //ログイン画面
 import Dashboard from "./components/Dashboard"; //ダッシュボード画面
@@ -19,7 +19,7 @@ export default function App() {
     localStorage.getItem("access_token") || localStorage.getItem("rb_token");
 
   return (
-    <BrowserRouter>
+    <HashRouter>
       <Routes>
         {/* トップパス：トークン有無で /home or /login に振り分け */}
         <Route
@@ -86,6 +86,6 @@ export default function App() {
           }
         />
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
