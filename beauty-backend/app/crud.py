@@ -32,6 +32,19 @@ def update_customer(db: Session, customer_id: int, customer_in: schemas.Customer
     db.refresh(customer)
     return customer
 
+# 顧客を削除（紐づく来店・明細も削除される）
+def delete_customer(db: Session, customer_id: int) -> bool:
+    customer = db.query(models.Customer).filter(models.Customer.id == customer_id).first()
+    if not customer:
+        return False
+
+    db.delete(customer)   # ★ ORM delete なので cascade が効く
+    db.commit()
+    return True
+
+
+
+
 #スタッフアカウント作成
 def create_staff(db: Session, staff_in: schemas.StaffCreate):
     hashed = get_password_hash(staff_in.password)

@@ -1,7 +1,7 @@
 # app/routers/customers.py
 from typing import Optional, List
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException ,status
 from sqlalchemy.orm import Session
 
 from ..database import get_db
@@ -36,3 +36,10 @@ def update_customer(customer_id: int, customer_in: schemas.CustomerUpdate, db: S
     if not updated:
         raise HTTPException(status_code=404, detail="Customer not found")
     return updated
+
+@router.delete("/{customer_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_customer(customer_id: int, db: Session = Depends(get_db)):
+    ok = crud.delete_customer(db, customer_id)
+    if not ok:
+        raise HTTPException(status_code=404, detail="Customer not found")
+    return
