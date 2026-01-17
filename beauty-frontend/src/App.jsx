@@ -46,7 +46,7 @@ export default function App() {
           }
         />
 
-        {/* ✅ ダッシュボード画面（要ログイン） */}
+        {/* ダッシュボード画面（要ログイン） */}
         <Route
           path="/dashboard"
           element={
@@ -56,7 +56,7 @@ export default function App() {
           }
         />
 
-        {/* ✅ 新規顧客登録（要ログイン） */}
+        {/* 新規顧客登録（要ログイン） */}
         <Route
           path="/customers/new"
           element={
@@ -66,7 +66,7 @@ export default function App() {
           }
         />
 
-        {/* ✅ 顧客検索画面（要ログイン） */}
+        {/* 顧客検索画面（要ログイン） */}
         <Route
           path="/customers/search"
           element={
@@ -76,7 +76,7 @@ export default function App() {
           }
         />
 
-        {/* ✅ 顧客詳細画面（要ログイン） */}
+        {/* 顧客詳細画面（要ログイン） */}
         <Route
           path="/customers/:id"
           element={

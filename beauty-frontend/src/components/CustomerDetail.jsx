@@ -1,8 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import DashboardLayout from "./DashboardLayout";
 import { updateCustomer } from "../api/customers";
-
 import { API_BASE_URL } from "../api/config";
 
 //////////// 共通のコンポーネント ///////////
@@ -275,11 +274,46 @@ const IDEAL_SKIN = [
 //////////////////顧客詳細UI/////////////////////
 export default function CustomerDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const [custDeleting, setCustDeleting] = useState(false);
 
   // スタッフ一覧（DBから取得）
   const [staffs, setStaffs] = useState([]);
   const [staffsLoading, setStaffsLoading] = useState(false);
   const [staffsError, setStaffsError] = useState("");
+
+  // 顧客
+  const [customer, setCustomer] = useState({
+    id: "",
+    name: "",
+    kana: "",
+    phone: "",
+    email: "",
+    birthday: "",
+    note: "",
+    email_opt_in: true,
+  });
+
+  // 顧客編集
+  const [isCustEditing, setIsCustEditing] = useState(false);
+  const [custSaving, setCustSaving] = useState(false);
+  const [custEdit, setCustEdit] = useState({
+    birthday: "",
+    email: "",
+    phone: "",
+    emailOptIn: true,
+    address: "",
+    memo: "",
+    skinType: "",
+    skinConcerns: [],
+    idealSkin: [],
+    concernNote: "",
+    idealNote: "",
+    sensitiveInfo: "",
+  });
+
+  const fullName = useMemo(() => customer.name || "", [customer.name]);
+  const noteMap = useMemo(() => parseNote(customer.note), [customer.note]);
 
   // select 用 options（value=staff_id, label=表示名）
   const staffOptions = useMemo(() => {
@@ -318,38 +352,6 @@ export default function CustomerDetail() {
     }),
     []
   );
-
-  // 顧客
-  const [customer, setCustomer] = useState({
-    id: "",
-    name: "",
-    kana: "",
-    phone: "",
-    email: "",
-    birthday: "",
-    note: "",
-    email_opt_in: true,
-  });
-
-  // 顧客編集
-  const [isCustEditing, setIsCustEditing] = useState(false);
-  const [custSaving, setCustSaving] = useState(false);
-  const [custEdit, setCustEdit] = useState({
-    birthday: "",
-    email: "",
-    phone: "",
-    emailOptIn: true,
-    address: "",
-    memo: "",
-    skinType: "",
-    skinConcerns: [],
-    idealSkin: [],
-    concernNote: "",
-    idealNote: "",
-    sensitiveInfo: "",
-  });
-
-  const fullName = useMemo(() => customer.name || "", [customer.name]);
 
   // スタッフ取得（GET /staffs）
   useEffect(() => {
@@ -414,7 +416,6 @@ export default function CustomerDetail() {
         const data = await res.json();
         setCustomer(data);
 
-        // note を分解して編集stateに初期セット
         const m = parseNote(data.note);
         setCustEdit({
           birthday: data.birthday || "",
@@ -447,7 +448,6 @@ export default function CustomerDetail() {
   const startCustomerEdit = () => setIsCustEditing(true);
 
   const cancelCustomerEdit = () => {
-    // customer.note から戻す
     const m = parseNote(customer.note);
     setCustEdit({
       birthday: customer.birthday || "",
@@ -466,6 +466,43 @@ export default function CustomerDetail() {
     setIsCustEditing(false);
   };
 
+  // ✅ 顧客削除
+  const deleteCustomer = async () => {
+    const customerId = Number(customer.id || id);
+    if (!customerId) return;
+
+    const ok = window.confirm(
+      "この顧客を削除しますか？\n※来店記録もすべて削除されます。"
+    );
+    if (!ok) return;
+
+    const token =
+      localStorage.getItem("access_token") || localStorage.getItem("rb_token");
+
+    try {
+      setCustDeleting(true);
+
+      const res = await fetch(`${API_BASE_URL}/customers/${customerId}`, {
+        method: "DELETE",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+
+      if (!res.ok) {
+        const txt = await res.text().catch(() => "");
+        throw new Error(`削除に失敗しました (${res.status}) ${txt}`);
+      }
+
+      alert("顧客を削除しました。");
+      navigate("/customers/search", { replace: true });
+    } catch (e) {
+      console.error(e);
+      alert(e.message || "顧客の削除に失敗しました");
+    } finally {
+      setCustDeleting(false);
+    }
+  };
+
+  // ✅ 顧客保存（更新）
   const saveCustomer = async () => {
     try {
       setCustSaving(true);
@@ -481,7 +518,6 @@ export default function CustomerDetail() {
       const updated = await updateCustomer(Number(customer.id || id), payload);
       setCustomer(updated);
 
-      // 更新後のnoteで編集stateも同期
       const m = parseNote(updated.note);
       setCustEdit((prev) => ({
         ...prev,
@@ -509,9 +545,7 @@ export default function CustomerDetail() {
     }
   };
 
-  const noteMap = useMemo(() => parseNote(customer.note), [customer.note]);
-
-  // 来店記録（ここから下は今のまま）
+  // ===== 来店記録 =====
   const [visits, setVisits] = useState([]);
   const [visitLoading, setVisitLoading] = useState(false);
   const [visitError, setVisitError] = useState("");
@@ -534,7 +568,10 @@ export default function CustomerDetail() {
         });
 
         if (!res.ok) {
-          throw new Error("来店履歴の取得に失敗しました");
+          const txt = await res.text().catch(() => "");
+          throw new Error(
+            `来店履歴の取得に失敗しました（${res.status}）${txt}`
+          );
         }
 
         const data = await res.json();
@@ -562,7 +599,7 @@ export default function CustomerDetail() {
         setVisits(mapped);
       } catch (e) {
         console.error(e);
-        setVisitError(e.message);
+        setVisitError(e.message || "来店履歴取得エラー");
       } finally {
         setVisitLoading(false);
       }
@@ -578,6 +615,7 @@ export default function CustomerDetail() {
     staff_id: "",
     items: [],
   });
+
   // 行内編集用ステート
   const [editingId, setEditingId] = useState(null);
   const [rowDraft, setRowDraft] = useState({
@@ -598,6 +636,20 @@ export default function CustomerDetail() {
     setIsAddOpen(true);
   };
 
+  const mapCategory = (catLabel) => {
+    if (catLabel === "スキンケア") return "skincare";
+    if (catLabel === "メイクアップ") return "makeup";
+    if (catLabel === "その他") return "other";
+    return "other";
+  };
+
+  const findCategoryLabel = (productName) => {
+    for (const [catLabel, names] of Object.entries(productOptions)) {
+      if (names.includes(productName)) return catLabel;
+    }
+    return "その他";
+  };
+
   const saveAdd = async () => {
     if (!addDraft.date?.trim()) return alert("日付を入力してください");
     if (!String(addDraft.staff_id || "").trim())
@@ -609,20 +661,6 @@ export default function CustomerDetail() {
       localStorage.getItem("access_token") || localStorage.getItem("rb_token");
 
     const visitDate = addDraft.date.replaceAll("/", "-");
-
-    const mapCategory = (catLabel) => {
-      if (catLabel === "スキンケア") return "skincare";
-      if (catLabel === "メイクアップ") return "makeup";
-      if (catLabel === "その他") return "other";
-      return "other";
-    };
-
-    const findCategoryLabel = (productName) => {
-      for (const [catLabel, names] of Object.entries(productOptions)) {
-        if (names.includes(productName)) return catLabel;
-      }
-      return "その他";
-    };
 
     const apiItems = addDraft.items.map((name) => {
       const catLabel = findCategoryLabel(name);
@@ -719,20 +757,6 @@ export default function CustomerDetail() {
       localStorage.getItem("access_token") || localStorage.getItem("rb_token");
 
     const visitDate = rowDraft.date.replaceAll("/", "-");
-
-    const mapCategory = (catLabel) => {
-      if (catLabel === "スキンケア") return "skincare";
-      if (catLabel === "メイクアップ") return "makeup";
-      if (catLabel === "その他") return "other";
-      return "skincare";
-    };
-
-    const findCategoryLabel = (productName) => {
-      for (const [catLabel, names] of Object.entries(productOptions)) {
-        if (names.includes(productName)) return catLabel;
-      }
-      return "その他";
-    };
 
     const apiItems = rowDraft.items.map((name) => {
       const catLabel = findCategoryLabel(name);
@@ -837,12 +861,22 @@ export default function CustomerDetail() {
             </h1>
 
             {!isCustEditing ? (
-              <button
-                onClick={startCustomerEdit}
-                className="rounded-lg border px-4 py-2 text-sm font-semibold hover:bg-gray-50"
-              >
-                基本情報を編集
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={startCustomerEdit}
+                  className="rounded-lg border px-4 py-2 text-sm font-semibold hover:bg-gray-50"
+                >
+                  基本情報を編集
+                </button>
+
+                <button
+                  onClick={deleteCustomer}
+                  disabled={custDeleting}
+                  className="rounded-lg border border-red-500 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
+                >
+                  {custDeleting ? "削除中..." : "顧客を削除"}
+                </button>
+              </div>
             ) : (
               <div className="flex gap-2">
                 <button
