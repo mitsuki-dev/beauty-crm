@@ -6,6 +6,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
+from fastapi.responses import FileResponse
+from fastapi import Request
 
 from .auth import router as auth_router
 from .routers.customers import router as customers_router
@@ -29,13 +31,13 @@ app.add_middleware(
 )
 
 # ここで登録！
-app.include_router(auth_router)        #ログイン系
-app.include_router(customers_router)   #顧客登録API
-app.include_router(staffs.router)      #スタッフ登録
-app.include_router(emails.router)      #メール送信(ダミー)
-app.include_router(visits.router)      #来店／購入履歴の登録
-app.include_router(follow_mail.router) #フォロー対象の抽出API
-app.include_router(dashboard.router) #ダッシュボード系
+app.include_router(auth_router, prefix="/api")        #ログイン系
+app.include_router(customers_router, prefix="/api")   #顧客登録API
+app.include_router(staffs.router, prefix="/api")      #スタッフ登録
+app.include_router(emails.router, prefix="/api")      #メール送信(ダミー)
+app.include_router(visits.router, prefix="/api")      #来店／購入履歴の登録
+app.include_router(follow_mail.router, prefix="/api") #フォロー対象の抽出API
+app.include_router(dashboard.router, prefix="/api") #ダッシュボード系
 
 @app.get("/status")
 def status():
@@ -44,3 +46,18 @@ def status():
 BASE_DIR = Path(__file__).resolve().parent
 static_dir = BASE_DIR / "static"
 app.mount("/", StaticFiles(directory=str(static_dir), html=True), name="frontend")
+
+INDEX_HTML = static_dir / "index.html"
+
+@app.get("/{full_path:path}")
+def spa_fallback(full_path: str, request: Request):
+    # APIと静的ファイルは触らない
+    if full_path.startswith("api/"):
+        return {"detail": "Not Found"}  # ここはAPI側の404として返す
+
+    # 実ファイルが存在するなら StaticFiles に任せたいが、
+    # ここに来る時点でStaticFilesが拾えてないので index.html を返す
+    if INDEX_HTML.exists():
+        return FileResponse(str(INDEX_HTML))
+
+    return {"detail": "index.html not found"}
