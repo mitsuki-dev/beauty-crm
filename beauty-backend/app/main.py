@@ -1,14 +1,18 @@
 # app/main.py
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from .auth import router as auth_router
-from .routers.customers import router as customers_router  # ★ 追加
-from .database import Base, engine  # ★ 追加（DBの土台）
-from . import models                # ★ 追加（Customerモデルを登録するため）
-from .routers import staffs, emails,visits ,follow_mail
-from app.routers import dashboard
 from dotenv import load_dotenv
 load_dotenv()
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from pathlib import Path
+
+from .auth import router as auth_router
+from .routers.customers import router as customers_router
+from .database import Base, engine
+from . import models  # モデル登録のため
+from .routers import staffs, emails, visits, follow_mail, dashboard  # ←相対で統一
+
 
 app = FastAPI(title="Re:Beauty API")
 
@@ -17,7 +21,7 @@ Base.metadata.create_all(bind=engine)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "http://192.168.11.48:5173",# Vite (React)
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173", "http://192.168.11.48:5173","https://mitsukidev.pythonanywhere.com"
 ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -37,3 +41,6 @@ app.include_router(dashboard.router) #ダッシュボード系
 def status():
     return {"status": "ok"}
 
+BASE_DIR = Path(__file__).resolve().parent
+static_dir = BASE_DIR / "static"
+app.mount("/", StaticFiles(directory=str(static_dir), html=True), name="frontend")
