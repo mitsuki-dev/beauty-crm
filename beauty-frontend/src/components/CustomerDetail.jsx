@@ -3,8 +3,7 @@ import { useParams } from "react-router-dom";
 import DashboardLayout from "./DashboardLayout";
 import { updateCustomer } from "../api/customers";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+import { API_BASE_URL } from "../api/config";
 
 //////////// 共通のコンポーネント ///////////
 function SectionCard({ title, children, className = "", right }) {

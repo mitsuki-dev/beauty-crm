@@ -1,8 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "./DashboardLayout";
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+import { API_BASE_URL } from "../api/config";
 
 ///////// 共通：ゆる一致（全角↔半角、カナ↔ひら、大小無視） ////////
 const normalize = (s = "") =>
