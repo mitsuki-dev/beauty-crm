@@ -37,12 +37,9 @@ def delete_customer(db: Session, customer_id: int) -> bool:
     customer = db.query(models.Customer).filter(models.Customer.id == customer_id).first()
     if not customer:
         return False
-
-    db.delete(customer)   # ★ ORM delete なので cascade が効く
+    db.delete(customer)
     db.commit()
     return True
-
-
 
 
 #スタッフアカウント作成
